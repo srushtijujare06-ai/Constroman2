@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+body {
+  background-color: rgb(249 250 251);
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: rgb(203 213 225);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.sidebar-link:hover {
+  background-color: rgb(51 65 85);
+  color: white;
+}
+
+.sidebar-link.active {
+  background-color: rgb(51 65 85);
+  color: white;
+}
