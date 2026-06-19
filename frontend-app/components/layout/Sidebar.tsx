@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -18,7 +18,8 @@ import {
   FileText,
   BarChart3,
 } from "lucide-react"
-import { projects } from "@/lib/mock-data"
+import { fetchProjects } from "@/lib/api"
+import type { Project } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 const navSections = [
@@ -66,7 +67,8 @@ const navSections = [
 
 export default function Sidebar() {
   const pathname = usePathname()
-  const [selectedProjectId, setSelectedProjectId] = useState(projects[0].id)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [selectedProjectId, setSelectedProjectId] = useState("")
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     overview: true,
     daily: true,
@@ -75,7 +77,17 @@ export default function Sidebar() {
     materials: true,
   })
 
+  useEffect(() => {
+    fetchProjects().then((data) => {
+      setProjects(data)
+      if (data.length > 0 && !selectedProjectId) {
+        setSelectedProjectId(data[0].id)
+      }
+    })
+  }, [])
+
   const selectedProject = projects.find((p) => p.id === selectedProjectId) ?? projects[0]
+  const loading = projects.length === 0
 
   function toggleSection(key: string) {
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -90,6 +102,8 @@ export default function Sidebar() {
     const resolved = resolveHref(href)
     return pathname === resolved
   }
+
+  if (loading) return null
 
   return (
     <aside className="w-64 bg-slate-800 flex flex-col h-screen overflow-hidden flex-shrink-0">

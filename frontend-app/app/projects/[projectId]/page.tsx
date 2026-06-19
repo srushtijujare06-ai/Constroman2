@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from "react"
 import { use } from "react"
 import Link from "next/link"
 import {
@@ -18,7 +19,8 @@ import {
   ArrowLeft,
 } from "lucide-react"
 import Header from "@/components/layout/Header"
-import { projects } from "@/lib/mock-data"
+import { fetchProjects } from "@/lib/api"
+import type { Project } from "@/lib/types"
 
 const formGroups = [
   {
@@ -66,7 +68,24 @@ const formGroups = [
 
 export default function ProjectPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = use(params)
-  const project = projects.find((p) => p.id === projectId)
+  const [project, setProject] = useState<Project | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchProjects().then((data) => {
+      const p = data.find((p) => p.id === projectId) || null
+      setProject(p)
+      setLoading(false)
+    })
+  }, [projectId])
+
+  if (loading) {
+    return (
+      <div className="min-h-full bg-gray-50 flex items-center justify-center">
+        <p className="text-slate-500">Loading...</p>
+      </div>
+    )
+  }
 
   if (!project) {
     return (
@@ -95,7 +114,7 @@ export default function ProjectPage({ params }: { params: Promise<{ projectId: s
               </div>
               <div className="flex items-center gap-2 text-slate-500 text-sm">
                 <Calendar className="w-4 h-4" />
-                <span>Started {new Date(project.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</span>
+                <span>Started {project.startDate ? new Date(project.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "N/A"}</span>
               </div>
             </div>
             <span

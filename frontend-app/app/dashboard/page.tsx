@@ -1,9 +1,11 @@
 'use client'
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Building2, CheckCircle2, FileText, Clock, MapPin, Calendar, ChevronRight } from "lucide-react"
 import Header from "@/components/layout/Header"
-import { projects, siteReports, siteDiaryEntries, materialReceiptEntries } from "@/lib/mock-data"
+import { fetchProjects, fetchReports, mapProject } from "@/lib/api"
+import type { Project } from "@/lib/types"
 
 const stats = [
   { label: "Total Projects", value: 2, icon: Building2, color: "text-blue-600", bg: "bg-blue-50" },
@@ -26,45 +28,35 @@ type ActivityItem = {
 }
 
 function getRecentActivity(): ActivityItem[] {
-  const items: ActivityItem[] = []
-
-  for (const report of siteReports) {
-    const project = projects.find((p) => p.id === report.projectId)
-    if (project) {
-      items.push({ form: "Site Report", project: project.name, date: report.date, projectId: project.id })
-    }
-  }
-
-  for (const [pid, entries] of Object.entries(siteDiaryEntries)) {
-    const project = projects.find((p) => p.id === pid)
-    if (project) {
-      for (const entry of entries.slice(0, 1)) {
-        items.push({ form: "Site Diary", project: project.name, date: entry.date, projectId: pid })
-      }
-    }
-  }
-
-  for (const [pid, entries] of Object.entries(materialReceiptEntries)) {
-    const project = projects.find((p) => p.id === pid)
-    if (project) {
-      for (const entry of entries.slice(0, 1)) {
-        items.push({ form: "Material Receipt", project: project.name, date: entry.date, projectId: pid })
-      }
-    }
-  }
-
-  return items
-    .sort((a, b) => (a.date < b.date ? 1 : -1))
-    .slice(0, 5)
+  return []
 }
 
 export default function DashboardPage() {
-  const today = new Date().toLocaleDateString("en-IN", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  })
+  const [today, setToday] = useState("")
+  const [apiProjects, setApiProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setToday(
+      new Date().toLocaleDateString("en-IN", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    )
+    fetchProjects()
+      .then(setApiProjects)
+      .finally(() => setLoading(false))
+  }, [])
   const activity = getRecentActivity()
+
+  if (loading) {
+    return (
+      <div className="min-h-full bg-gray-50 flex items-center justify-center">
+        <p className="text-slate-500">Loading...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-full bg-gray-50">
@@ -102,7 +94,7 @@ export default function DashboardPage() {
         <div>
           <h3 className="text-base font-semibold text-slate-800 mb-3">Projects</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {projects.map((project) => (
+            {apiProjects.map((project) => (
               <div key={project.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
                 <div className="flex items-start justify-between mb-3">
                   <div>
