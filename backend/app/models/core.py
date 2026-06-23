@@ -29,11 +29,21 @@ class TimestampMixin:
     )
 
 
+class Role(Base):
+    __tablename__ = "roles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    description: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    users: Mapped[list["User"]] = relationship(back_populates="role_rel")
+
+
 class Organization(TimestampMixin, Base):
     __tablename__ = "organizations"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     slug: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     domain: Mapped[str | None] = mapped_column(String(255), nullable=True)
     logo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
@@ -41,6 +51,7 @@ class Organization(TimestampMixin, Base):
     settings: Mapped[dict[str, Any]] = mapped_column(
         JSONB, nullable=False, default=dict
     )
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
 
     users: Mapped[list["User"]] = relationship(back_populates="organization")
     projects: Mapped[list["Project"]] = relationship(back_populates="organization")
@@ -59,7 +70,10 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[str] = mapped_column(String(50), nullable=False, default="member")
+    role_id: Mapped[int] = mapped_column(
+        ForeignKey("roles.id"), nullable=False, index=True
+    )
+    role: Mapped[str] = mapped_column(String(50), nullable=False, default="employee")
     phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
@@ -74,6 +88,7 @@ class User(Base):
     )
 
     organization: Mapped[Organization] = relationship(back_populates="users")
+    role_rel: Mapped[Role] = relationship(back_populates="users")
     assignments: Mapped[list["ProjectAssignment"]] = relationship(
         back_populates="user"
     )
@@ -341,7 +356,7 @@ class Attachment(Base):
         ForeignKey("organizations.id"), nullable=False, index=True
     )
     submission_id: Mapped[int | None] = mapped_column(
-        ForeignKey("submissions.id"), nullable=True, index=True
+        ForeignKey("submissions.id"), nullable=True
     )
     entity_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
     entity_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -481,3 +496,32 @@ class Notification(Base):
             "created_at",
         ),
     )
+
+
+class AdminRemark(TimestampMixin, Base):
+    __tablename__ = "admin_remarks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    organization_id: Mapped[int] = mapped_column(
+        ForeignKey("organizations.id"), nullable=False, index=True
+    )
+    report_id: Mapped[int] = mapped_column(
+        ForeignKey("reports.id"), nullable=False, index=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"), nullable=False, index=True
+    )
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    is_admin_only: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), onupdate=func.now(), nullable=True
+    )
+
+    organization: Mapped[Organization] = relationship()
+    report: Mapped[Report] = relationship()
+    user: Mapped[User] = relationship()

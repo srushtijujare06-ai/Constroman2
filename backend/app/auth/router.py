@@ -1,27 +1,50 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import or_
 
 from app.auth.dependencies import get_current_user
 from app.auth.schemas import LoginRequest, RegisterRequest, TokenResponse, UserResponse
 from app.auth.utils import create_access_token, hash_password, verify_password
 from app.database import get_db
 from app.dependencies import DbSession
-from app.models import Organization, User
+from app.models import Organization, Role, User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+def _user_response(user: User) -> UserResponse:
+    return UserResponse(
+        id=user.id,
+        organization_id=user.organization_id,
+        name=user.name,
+        email=user.email,
+        role=user.role,
+        role_id=user.role_id,
+        phone=user.phone,
+        avatar_url=user.avatar_url,
+        is_active=user.is_active,
+        created_at=user.created_at,
+    )
+
+
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest, db: DbSession = None):
+    org = db.query(Organization).filter(Organization.slug == body.organization_slug).first()
+    if not org:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid organization slug",
+        )
+    if not verify_password(body.org_password, org.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid organization password",
+        )
     user = (
         db.query(User)
         .filter(
-            or_(
-                User.email == body.email,
-                User.email == body.email,
-            )
+            User.organization_id == org.id,
+            User.email == body.email,
         )
         .first()
     )
@@ -38,20 +61,7 @@ def login(body: LoginRequest, db: DbSession = None):
     user.last_login_at = datetime.now(timezone.utc)
     db.commit()
     token = create_access_token(user.id, user.organization_id)
-    return TokenResponse(
-        access_token=token,
-        user=UserResponse(
-            id=user.id,
-            organization_id=user.organization_id,
-            name=user.name,
-            email=user.email,
-            role=user.role,
-            phone=user.phone,
-            avatar_url=user.avatar_url,
-            is_active=user.is_active,
-            created_at=user.created_at,
-        ),
-    )
+    return TokenResponse(access_token=token, user=_user_response(user))
 
 
 @router.post("/register", response_model=TokenResponse, status_code=201)
@@ -79,12 +89,19 @@ def register(body: RegisterRequest, db: DbSession = None):
             status_code=status.HTTP_409_CONFLICT,
             detail="Email already registered in this organization",
         )
+    employee_role = db.query(Role).filter(Role.name == "employee").first()
+    if not employee_role:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Default role not found. Seed the database first.",
+        )
     user = User(
         organization_id=org.id,
         name=body.name,
         email=body.email,
         password_hash=hash_password(body.password),
-        role="member",
+        role_id=employee_role.id,
+        role="employee",
         phone=body.phone,
         is_active=True,
     )
@@ -92,32 +109,9 @@ def register(body: RegisterRequest, db: DbSession = None):
     db.commit()
     db.refresh(user)
     token = create_access_token(user.id, user.organization_id)
-    return TokenResponse(
-        access_token=token,
-        user=UserResponse(
-            id=user.id,
-            organization_id=user.organization_id,
-            name=user.name,
-            email=user.email,
-            role=user.role,
-            phone=user.phone,
-            avatar_url=user.avatar_url,
-            is_active=user.is_active,
-            created_at=user.created_at,
-        ),
-    )
+    return TokenResponse(access_token=token, user=_user_response(user))
 
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
-    return UserResponse(
-        id=current_user.id,
-        organization_id=current_user.organization_id,
-        name=current_user.name,
-        email=current_user.email,
-        role=current_user.role,
-        phone=current_user.phone,
-        avatar_url=current_user.avatar_url,
-        is_active=current_user.is_active,
-        created_at=current_user.created_at,
-    )
+    return _user_response(current_user)

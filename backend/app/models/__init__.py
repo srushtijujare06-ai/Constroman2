@@ -1,5 +1,6 @@
 from app.models.core import (
     Organization,
+    Role,
     User,
     Project,
     Subproject,
@@ -13,10 +14,12 @@ from app.models.core import (
     AuditLog,
     ApprovalWorkflow,
     Notification,
+    AdminRemark,
 )
 
 __all__ = [
     "Organization",
+    "Role",
     "User",
     "Project",
     "Subproject",
@@ -30,4 +33,5 @@ __all__ = [
     "AuditLog",
     "ApprovalWorkflow",
     "Notification",
+    "AdminRemark",
 ]

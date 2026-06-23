@@ -16,6 +16,8 @@ from app.routers import (
     attachments,
     comments,
     audit_logs,
+    remarks,
+    reminders,
 )
 from app.auth import router as auth_router
 
@@ -88,3 +90,5 @@ app.include_router(submissions.router)
 app.include_router(attachments.router)
 app.include_router(comments.router)
 app.include_router(audit_logs.router)
+app.include_router(remarks.router)
+app.include_router(reminders.router)

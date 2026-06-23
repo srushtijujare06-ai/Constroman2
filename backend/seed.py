@@ -1,19 +1,53 @@
 from datetime import date
 
+from sqlalchemy import text
+
 from app.auth.utils import hash_password
 from app.database import SessionLocal, engine, Base
 from app.models import (
     Organization,
+    Role,
     User,
     Project,
     Register,
     FormTemplate,
 )
 
-Base.metadata.create_all(bind=engine)
+
+def ensure_schema():
+    """Create tables using raw SQL to avoid SQLAlchemy index conflicts."""
+    meta = Base.metadata
+    tables = meta.sorted_tables
+    with engine.begin() as conn:
+        existing = set(
+            row[0]
+            for row in conn.execute(
+                text("SELECT tablename FROM pg_tables WHERE schemaname='public'")
+            ).all()
+        )
+        for table in tables:
+            if table.name not in existing:
+                table.create(conn, checkfirst=True)
+                print(f"  Created table: {table.name}")
+        for table in tables:
+            for index in table.indexes:
+                if index.name:
+                    exists = conn.execute(
+                        text(
+                            "SELECT 1 FROM pg_indexes WHERE schemaname='public' AND indexname=:name"
+                        ),
+                        {"name": index.name},
+                    ).first()
+                    if not exists:
+                        index.create(conn)
+                        print(f"  Created index: {index.name}")
+
+
+ensure_schema()
 
 
 def seed():
+    ensure_schema()
     db = SessionLocal()
 
     if db.query(Organization).count() > 0:
@@ -21,9 +55,15 @@ def seed():
         db.close()
         return
 
+    admin_role = Role(name="admin", description="Organization administrator")
+    employee_role = Role(name="employee", description="Regular employee")
+    db.add_all([admin_role, employee_role])
+    db.flush()
+
     org = Organization(
         name="Constroman Constructions Pvt Ltd",
         slug="constroman",
+        password_hash=hash_password("org123"),
         is_active=True,
         settings={"timezone": "Asia/Kolkata"},
     )
@@ -35,10 +75,22 @@ def seed():
         name="Admin User",
         email="admin@constroman.com",
         password_hash=hash_password("admin123"),
+        role_id=admin_role.id,
         role="admin",
         is_active=True,
     )
     db.add(user)
+
+    employee = User(
+        organization_id=org.id,
+        name="Employee User",
+        email="employee@constroman.com",
+        password_hash=hash_password("emp123"),
+        role_id=employee_role.id,
+        role="employee",
+        is_active=True,
+    )
+    db.add(employee)
 
     projects_data = [
         {
@@ -57,6 +109,7 @@ def seed():
         },
     ]
 
+    created_projects = []
     for p in projects_data:
         project = Project(
             organization_id=org.id,
@@ -67,6 +120,17 @@ def seed():
             code=p["code"],
         )
         db.add(project)
+        created_projects.append(project)
+    db.flush()
+
+    from app.models import ProjectAssignment
+    if created_projects:
+        assign = ProjectAssignment(
+            project_id=created_projects[0].id,
+            user_id=employee.id,
+            role="viewer",
+        )
+        db.add(assign)
 
     registers_data = [
         {

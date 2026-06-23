@@ -4,6 +4,8 @@ from pydantic import BaseModel
 
 
 class LoginRequest(BaseModel):
+    organization_slug: str
+    org_password: str
     email: str
     password: str
 
@@ -20,6 +22,7 @@ class UserResponse(BaseModel):
     name: str
     email: str
     role: str
+    role_id: int
     phone: str | None = None
     avatar_url: str | None = None
     is_active: bool

@@ -1,5 +1,7 @@
 import type { LoginRequest, RegisterRequest, TokenResponse, User } from "./auth-types"
 
+export type { User }
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"
 
 function getToken(): string | null {

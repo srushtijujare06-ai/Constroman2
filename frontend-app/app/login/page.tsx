@@ -7,6 +7,8 @@ import { Building2 } from "lucide-react"
 
 export default function LoginPage() {
   const { loginWithToken } = useAuth()
+  const [orgSlug, setOrgSlug] = useState("constroman")
+  const [orgPassword, setOrgPassword] = useState("org123")
   const [email, setEmail] = useState("admin@constroman.com")
   const [password, setPassword] = useState("admin123")
   const [error, setError] = useState("")
@@ -17,7 +19,7 @@ export default function LoginPage() {
     setError("")
     setSubmitting(true)
     try {
-      const res = await login({ email, password })
+      const res = await login({ organization_slug: orgSlug, org_password: orgPassword, email, password })
       await loginWithToken(res.access_token)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed")
@@ -37,6 +39,27 @@ export default function LoginPage() {
           </div>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Organization</label>
+            <input
+              type="text"
+              value={orgSlug}
+              onChange={(e) => setOrgSlug(e.target.value)}
+              required
+              placeholder="org-slug"
+              className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Organization Password</label>
+            <input
+              type="password"
+              value={orgPassword}
+              onChange={(e) => setOrgPassword(e.target.value)}
+              required
+              className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
             <input

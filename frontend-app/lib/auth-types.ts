@@ -4,6 +4,7 @@ export type User = {
   name: string
   email: string
   role: string
+  role_id: number
   phone: string | null
   avatar_url: string | null
   is_active: boolean
@@ -11,6 +12,8 @@ export type User = {
 }
 
 export type LoginRequest = {
+  organization_slug: string
+  org_password: string
   email: string
   password: string
 }
