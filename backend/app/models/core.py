@@ -69,6 +69,7 @@ class User(Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False)
+    email_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role_id: Mapped[int] = mapped_column(
         ForeignKey("roles.id"), nullable=False, index=True
@@ -96,6 +97,21 @@ class User(Base):
     __table_args__ = (
         UniqueConstraint("organization_id", "email", name="uq_org_email"),
         Index("ix_users_role", "role"),
+    )
+
+
+class EmailOtp(Base):
+    __tablename__ = "email_otps"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    otp: Mapped[str] = mapped_column(String(6), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
 
@@ -183,6 +199,9 @@ class Report(TimestampMixin, Base):
     __tablename__ = "reports"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    organization_id: Mapped[int] = mapped_column(
+        ForeignKey("organizations.id"), nullable=False, index=True
+    )
     project_id: Mapped[int] = mapped_column(
         ForeignKey("projects.id"), nullable=False, index=True
     )
@@ -198,8 +217,12 @@ class Report(TimestampMixin, Base):
     prepared_by_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id"), nullable=True
     )
+    approved_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    organization: Mapped["Organization"] = relationship()
     project: Mapped[Project] = relationship(back_populates="reports")
     subproject: Mapped[Subproject | None] = relationship(back_populates="reports")
     submissions: Mapped[list["Submission"]] = relationship(back_populates="report")
@@ -356,10 +379,11 @@ class Attachment(Base):
         ForeignKey("organizations.id"), nullable=False, index=True
     )
     submission_id: Mapped[int | None] = mapped_column(
-        ForeignKey("submissions.id"), nullable=True
+        ForeignKey("submissions.id"), nullable=True, index=True
     )
-    entity_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    entity_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    report_id: Mapped[int | None] = mapped_column(
+        ForeignKey("reports.id"), nullable=True
+    )
     file_name: Mapped[str] = mapped_column(String(500), nullable=False)
     file_size: Mapped[int] = mapped_column(Integer, nullable=False)
     mime_type: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -375,41 +399,8 @@ class Attachment(Base):
     )
 
     __table_args__ = (
-        Index("ix_attachments_entity", "entity_type", "entity_id"),
         Index("ix_attachments_submission_id", "submission_id"),
-    )
-
-
-class SubmissionComment(Base):
-    __tablename__ = "submission_comments"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    organization_id: Mapped[int] = mapped_column(
-        ForeignKey("organizations.id"), nullable=False, index=True
-    )
-    submission_id: Mapped[int] = mapped_column(
-        ForeignKey("submissions.id"), nullable=False, index=True
-    )
-    parent_id: Mapped[int | None] = mapped_column(
-        ForeignKey("submission_comments.id"), nullable=True
-    )
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id"), nullable=False, index=True
-    )
-    content: Mapped[str] = mapped_column(Text, nullable=False)
-    is_internal: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-    updated_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), onupdate=func.now(), nullable=True
-    )
-
-    __table_args__ = (
-        Index("ix_submission_comments_submission", "submission_id"),
-        Index("ix_submission_comments_parent", "parent_id"),
+        Index("ix_attachments_organization_id", "organization_id"),
     )
 
 
@@ -498,30 +489,33 @@ class Notification(Base):
     )
 
 
-class AdminRemark(TimestampMixin, Base):
-    __tablename__ = "admin_remarks"
+class Remark(TimestampMixin, Base):
+    __tablename__ = "remarks"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     organization_id: Mapped[int] = mapped_column(
         ForeignKey("organizations.id"), nullable=False, index=True
     )
-    report_id: Mapped[int] = mapped_column(
-        ForeignKey("reports.id"), nullable=False, index=True
+    report_id: Mapped[int | None] = mapped_column(
+        ForeignKey("reports.id"), nullable=True, index=True
+    )
+    submission_id: Mapped[int | None] = mapped_column(
+        ForeignKey("submissions.id"), nullable=True, index=True
     )
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"), nullable=False, index=True
     )
-    content: Mapped[str] = mapped_column(Text, nullable=False)
+    remark_scope: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="general"
+    )
+    remark_text: Mapped[str] = mapped_column(Text, nullable=False)
     is_admin_only: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-    updated_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), onupdate=func.now(), nullable=True
     )
 
     organization: Mapped[Organization] = relationship()
     report: Mapped[Report] = relationship()
     user: Mapped[User] = relationship()
+
+
+AdminRemark = Remark

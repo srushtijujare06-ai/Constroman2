@@ -88,6 +88,7 @@ class ReportCreate(BaseModel):
     status: str = "draft"
     weather: dict[str, Any] | None = None
     prepared_by_id: int | None = None
+    approved_by_id: int | None = None
     notes: str | None = None
 
 
@@ -95,6 +96,7 @@ class ReportRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    organization_id: int
     project_id: int
     subproject_id: int | None = None
     report_date: date
@@ -102,6 +104,7 @@ class ReportRead(BaseModel):
     status: str
     weather: dict[str, Any] | None = None
     prepared_by_id: int | None = None
+    approved_by_id: int | None = None
     notes: str | None = None
     created_at: datetime
     updated_at: datetime | None = None
@@ -122,7 +125,7 @@ class RegisterRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    organization_id: int
+    organization_id: int | None = None
     name: str
     slug: str
     description: str | None = None
@@ -211,8 +214,7 @@ class SubmissionListParams(BaseModel):
 
 class AttachmentCreate(BaseModel):
     submission_id: int | None = None
-    entity_type: str | None = None
-    entity_id: int | None = None
+    report_id: int | None = None
     file_name: str
     file_size: int
     mime_type: str
@@ -227,8 +229,7 @@ class AttachmentRead(BaseModel):
     id: int
     organization_id: int
     submission_id: int | None = None
-    entity_type: str | None = None
-    entity_id: int | None = None
+    report_id: int | None = None
     file_name: str
     file_size: int
     mime_type: str
@@ -236,28 +237,6 @@ class AttachmentRead(BaseModel):
     storage_provider: str
     uploaded_by_id: int | None = None
     created_at: datetime
-
-
-class CommentCreate(BaseModel):
-    submission_id: int
-    parent_id: int | None = None
-    user_id: int
-    content: str
-    is_internal: bool = False
-
-
-class CommentRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    organization_id: int
-    submission_id: int
-    parent_id: int | None = None
-    user_id: int
-    content: str
-    is_internal: bool
-    created_at: datetime
-    updated_at: datetime | None = None
 
 
 class AuditLogRead(BaseModel):

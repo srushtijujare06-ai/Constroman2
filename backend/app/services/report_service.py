@@ -12,13 +12,16 @@ logger = logging.getLogger(__name__)
 
 
 def create_report(db: Session, payload: ReportCreate) -> ReportRead:
-    if db.get(Project, payload.project_id) is None:
+    project = db.get(Project, payload.project_id)
+    if project is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found.",
         )
     repo = BaseRepository(db, Report)
-    report = repo.create(**payload.model_dump())
+    data = payload.model_dump()
+    data["organization_id"] = project.organization_id
+    report = repo.create(**data)
     db.commit()
     db.refresh(report)
     logger.info("Created report %s for project %s", report.id, report.project_id)

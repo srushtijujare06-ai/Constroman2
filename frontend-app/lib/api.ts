@@ -91,19 +91,10 @@ export async function resolveProjectId(slug: string): Promise<number | null> {
   return map[slug] ?? null
 }
 
-// ---------------------------------------------------------------------------
-// Registers, templates, submissions
-// ---------------------------------------------------------------------------
-
 export interface ApiRegister {
   id: number
-  organization_id: number
-  name: string
   slug: string
-  sort_order: number
-  scope: string
-  config: Record<string, unknown>
-  is_active: boolean
+  name: string
 }
 
 export interface ApiTemplate {

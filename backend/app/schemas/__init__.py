@@ -15,8 +15,6 @@ from app.schemas.core import (
     SubmissionListParams,
     AttachmentRead,
     AttachmentCreate,
-    CommentCreate,
-    CommentRead,
     AuditLogRead,
     PaginatedResponse,
 )
@@ -38,8 +36,6 @@ __all__ = [
     "SubmissionListParams",
     "AttachmentRead",
     "AttachmentCreate",
-    "CommentCreate",
-    "CommentRead",
     "AuditLogRead",
     "PaginatedResponse",
 ]

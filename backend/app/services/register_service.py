@@ -1,3 +1,4 @@
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.models import Register
@@ -12,18 +13,13 @@ def list_registers(
     skip: int = 0,
     limit: int = 100,
 ) -> list[RegisterRead]:
-    filters = {"is_active": True}
+    q = db.query(Register).filter(Register.is_active == True)
     if organization_id is not None:
-        filters["organization_id"] = organization_id
-    repo = BaseRepository(db, Register)
-    registers = repo.list(
-        skip=skip,
-        limit=limit,
-        filters=filters,
-        sort_by="sort_order",
-        sort_order="asc",
-    )
-    return [RegisterRead.model_validate(r) for r in registers]
+        q = q.filter(
+            or_(Register.organization_id == organization_id, Register.organization_id.is_(None))
+        )
+    q = q.order_by(Register.sort_order.asc()).offset(skip).limit(limit)
+    return [RegisterRead.model_validate(r) for r in q.all()]
 
 
 def get_register(db: Session, register_id: int) -> RegisterRead:

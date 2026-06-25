@@ -14,7 +14,7 @@ from app.routers import (
     templates,
     submissions,
     attachments,
-    comments,
+    users,
     audit_logs,
     remarks,
     reminders,
@@ -88,7 +88,7 @@ app.include_router(registers.router)
 app.include_router(templates.router)
 app.include_router(submissions.router)
 app.include_router(attachments.router)
-app.include_router(comments.router)
+app.include_router(users.router)
 app.include_router(audit_logs.router)
 app.include_router(remarks.router)
 app.include_router(reminders.router)

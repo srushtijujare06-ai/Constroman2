@@ -2,6 +2,7 @@ from app.models.core import (
     Organization,
     Role,
     User,
+    EmailOtp,
     Project,
     Subproject,
     ProjectAssignment,
@@ -10,10 +11,10 @@ from app.models.core import (
     FormTemplate,
     Submission,
     Attachment,
-    SubmissionComment,
     AuditLog,
     ApprovalWorkflow,
     Notification,
+    Remark,
     AdminRemark,
 )
 
@@ -21,6 +22,7 @@ __all__ = [
     "Organization",
     "Role",
     "User",
+    "EmailOtp",
     "Project",
     "Subproject",
     "ProjectAssignment",
@@ -29,9 +31,9 @@ __all__ = [
     "FormTemplate",
     "Submission",
     "Attachment",
-    "SubmissionComment",
     "AuditLog",
     "ApprovalWorkflow",
     "Notification",
+    "Remark",
     "AdminRemark",
 ]

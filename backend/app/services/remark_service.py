@@ -12,9 +12,7 @@ def list_remarks(
 ) -> list[AdminRemark]:
     q = db.query(AdminRemark).filter(AdminRemark.report_id == report_id)
     if current_user.role == "employee":
-        q = q.filter(
-            AdminRemark.is_admin_only == False,
-        )
+        q = q.filter(AdminRemark.is_admin_only == False)
     return q.order_by(AdminRemark.created_at.desc()).all()
 
 
@@ -35,8 +33,9 @@ def create_remark(
         organization_id=current_user.organization_id,
         report_id=report_id,
         user_id=current_user.id,
-        content=content,
+        remark_text=content,
         is_admin_only=is_admin_only,
+        remark_scope="admin" if is_admin_only else "general",
     )
     db.add(remark)
     db.commit()

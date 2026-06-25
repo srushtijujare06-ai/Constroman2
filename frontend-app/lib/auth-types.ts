@@ -3,6 +3,7 @@ export type User = {
   organization_id: number
   name: string
   email: string
+  email_verified: boolean
   role: string
   role_id: number
   phone: string | null
@@ -16,6 +17,7 @@ export type LoginRequest = {
   org_password: string
   email: string
   password: string
+  role?: string
 }
 
 export type TokenResponse = {
@@ -26,8 +28,9 @@ export type TokenResponse = {
 
 export type RegisterRequest = {
   organization_slug: string
-  name: string
   email: string
+  otp: string
+  name: string
   password: string
   phone?: string
 }
