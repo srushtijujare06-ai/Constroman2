@@ -35,3 +35,21 @@ class RegisterRequest(BaseModel):
     email: str
     password: str
     phone: str | None = None
+
+
+class VerificationRequiredResponse(BaseModel):
+    verification_required: bool = True
+    organization_slug: str
+    email: str
+    message: str
+
+
+class VerifyOtpRequest(BaseModel):
+    organization_slug: str
+    email: str
+    code: str
+
+
+class ResendOtpRequest(BaseModel):
+    organization_slug: str
+    email: str

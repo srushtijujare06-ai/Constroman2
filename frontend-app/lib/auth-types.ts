@@ -31,3 +31,27 @@ export type RegisterRequest = {
   password: string
   phone?: string
 }
+
+export type VerificationRequiredResponse = {
+  verification_required: true
+  organization_slug: string
+  email: string
+  message: string
+}
+
+export type VerifyOtpRequest = {
+  organization_slug: string
+  email: string
+  code: string
+}
+
+export type ResendOtpRequest = {
+  organization_slug: string
+  email: string
+}
+
+export function isVerificationRequired(
+  res: TokenResponse | VerificationRequiredResponse
+): res is VerificationRequiredResponse {
+  return "verification_required" in res
+}
